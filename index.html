@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+
+<head>
+	<title>Covid-19 Deaths in USA and Territories.</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<!-- Google Tag Manager -->
+	<script>
+		(function(w, d, s, l, i) {
+			w[l] = w[l] || [];
+			w[l].push({
+				'gtm.start': new Date().getTime(),
+				event: 'gtm.js'
+			});
+			var f = d.getElementsByTagName(s)[0],
+				j = d.createElement(s),
+				dl = l != 'dataLayer' ? '&l=' + l : '';
+			j.async = true;
+			j.src =
+				'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+			f.parentNode.insertBefore(j, f);
+		})(window, document, 'script', 'dataLayer', 'GTM-M64XCX');
+	</script>
+	<!-- End Google Tag Manager -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta content="Jack Northrup " name="author" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+	<style>
+		body {
+			font-family: 'Roboto';
+			color: #1f810a;
+			background-color: #1da600;
+		}
+
+		#wrapper {
+			margin-left: auto;
+			margin-right: auto;
+			margin-bottom: 20px;
+			width: 94%;
+			height: auto;
+			border: 1px solid;
+			padding: 10px;
+			background-color: #73ee73;
+			box-shadow: -5px 10px #242424;
+		}
+
+		#title {
+			font-family: 'Merriweather';
+			font-weight: bold;
+			text-align: center;
+			padding: 30px;
+			font-size: 2.75vw;
+			letter-spacing: -0.01em;
+			color: #8d2000;
+		}
+
+		#legend {
+			display: flex;
+			justify-content: flex-end;
+			padding: 0 10px 10px;
+			font-size: 12px;
+		}
+
+		#legend .item {
+			line-height: 12px;
+			padding: 0 10px 0 4px;
+		}
+
+		#legend .item.cases {
+			border-left: 12px solid #46c814;
+		}
+
+		#legend .item.deaths {
+			border-left: 12px solid #cf1603;
+		}
+
+		#chart-wrapper {
+			height: 1000px;
+		}
+
+		#footer {
+			display: flex;
+			justify-content: space-between;
+			padding: 20px 10px;
+			color: #aaa;
+			font-size: 12px;
+		}
+
+		#footer a {
+			color: #aaa;
+		}
+	</style>
+
+
+
+	<script>
+		function getcsv() {
+			var yesterday = moment(moment.utc().format('LLLL')).add(-1, 'day').format('LLLL');
+			var pastDATE = moment(yesterday).add(-5, 'hour').format('MM-DD-YYYY');
+			console.log(yesterday,' - ',pastDATE);
+			var filename = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/' + pastDATE + '.csv';
+			console.log('filename', filename);
+			fDate = filename.slice(115, -4);
+			return [filename, fDate];
+		};
+		console.log('getcsv()[0]', getcsv()[0])
+		console.log('getcsv()[1]', getcsv()[1])
+		var covidLabels;
+		fDate = getcsv()[1];
+		var newarray = [];
+
+		function newTop(covids) {
+			covidLabels = covids.map(function(d) {
+				return d.Province_State
+			});
+			var deathData = covids.map(function(d) {
+				return +d.Deaths
+			});
+			var confirmedData = covids.map(function(d) {
+				return +d.Confirmed
+			});
+			var covidColors = '#f9c40c';
+			var arrayLength = deathData.length;
+			for (var i = 0; i < arrayLength; i++) {
+				newarray.push([deathData[i], confirmedData[i], covidLabels[i], '\n']);
+			}
+			var a = newarray;
+			a.sort(sortFunction);
+
+			function sortFunction(a, b) {
+				if (a[0] === b[0]) {
+					return 0;
+				} else {
+					/// the minus one skips over the header so the list may be sorted
+					return (a[0] > b[0]) ? -1 : 1;
+				}
+			}
+			var top = a.slice(0, 25);
+			/// puts the header back in the list
+			top.splice(0, 0, ['Deaths', 'Confirmed', 'Province_State', '\n']);
+			console.log(top)
+
+			var Province_State = top.map(function(value, index) {
+				return value[2];
+			});
+			console.log(Province_State)
+			var Deaths = top.map(function(value, inDex) {
+				return value[0];
+			});
+			console.log('Deaths: ', Deaths)
+			var Confirmed = top.map(function(value, index) {
+				return value[1];
+			});
+			console.log('Confirmed', Confirmed)
+			var newTop;
+			newTop = top;
+			console.log("newTop: ", newTop)
+
+			var Today = getcsv()[0];
+			console.log('Today: ', Today)
+
+			function drawColumnChart(newTop) {
+				var covidColors = '#f9c40c';
+				console.log(Province_State);
+				console.log(Deaths);
+				console.log(Confirmed);
+				var barOptions_stacked = {
+					tooltips: {
+						enabled: true
+					},
+					hover: {
+						animationDuration: 0
+					},
+					scales: {
+						xAxes: [{
+							ticks: {
+								beginAtZero: true,
+								fontFamily: "'Open Sans Bold', sans-serif",
+								fontSize: 16
+							},
+							scaleLabel: {
+								display: true
+							},
+							gridLines: {},
+							stacked: true
+						}],
+						yAxes: [{
+							gridLines: {
+								display: false,
+								color: "#fff",
+								zeroLineColor: "#fff",
+								zeroLineWidth: 0
+							},
+							ticks: {
+								fontFamily: "'Open Sans Bold', sans-serif",
+								fontSize: 16
+							},
+							stacked: true
+						}]
+					},
+					legend: {
+						display: false
+					},
+
+					animation: {
+						onComplete: function() {
+							var chartInstance = this.chart;
+							var ctx = chartInstance.ctx;
+							ctx.textAlign = "left";
+							ctx.font = "12px Open Sans";
+							ctx.fillStyle = "#000";
+							Chart.helpers.each(this.data.datasets.forEach(function(dataset, i) {
+								var meta = chartInstance.controller.getDatasetMeta(i);
+								Chart.helpers.each(meta.data.forEach(function(bar, index) {
+									data = dataset.data[index];
+									if (i == 0) {
+										ctx.fillText(data, 150, bar._model.y + 4);
+									} else {
+										ctx.fillText(data, bar._model.x + 10, bar._model.y + 4);
+									}
+								}), this)
+							}), this);
+						}
+					},
+					pointLabelFontFamily: "Quadon Extra Bold",
+					scaleFontFamily: "Quadon Extra Bold",
+				};
+				var ctx = document.getElementById("stChart");
+				var myChart = new Chart(ctx, {
+					type: 'horizontalBar',
+					data: {
+						labels: Province_State,
+						datasets: [{
+								//barPercentage: 0.5,
+								//	barThickness: 28,
+								//maxBarThickness: 28,
+								//minBarLength: 2,
+								data: Deaths,
+								//backgroundColor: "rgba(63,103,126,1)",
+								backgroundColor: "rgba(200,20,20,1)",
+								hoverBackgroundColor: "rgba(220,40,40,1)"
+							},
+							{
+								data: Confirmed,
+								backgroundColor: "rgba(70,200,20,1)",
+								hoverBackgroundColor: "rgba(90,220,40,1)"
+							}
+						]
+					},
+					options: barOptions_stacked,
+				});
+			}
+			drawColumnChart();
+		}
+
+		var Today = getcsv()[0];
+		console.log('Today: ', Today)
+		d3.csv(Today)
+			.then(newTop);
+	</script>
+</head>
+
+<body>
+	<div id="wrapper">
+		<div id="title">Covid-19 Cases and Deaths - USA<br />
+
+			<div id="legend">
+				<div class="item deaths">Deaths</div>
+				<div class="item cases">Confirmed</div>
+			</div>
+			<div class="chart-container">
+				<canvas id="stChart"></canvas>
+			</div>
+			<div id="footer">
+				<div class="left"><a href="https://createwithdata.com/chartjs-and-csv/" target="_blank">About</a></div>
+				<div class="right">Source: <a href="https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_daily_reports_us/06-28-2020
+		-2020.csv" target="_blank">CSSEGIS</a> / GitHub.com/CSSEGISandData</div>
+			</div>
+		</div>
+</body>
